@@ -58,7 +58,7 @@ namespace kotte
             if (player_Alive == false) {
                 thisRound = roundState::Lost;
             }
-            else if (score >= 20) {
+            else if (score >= 100) {
                 thisRound = roundState::Won;
             }
         }
@@ -566,10 +566,10 @@ namespace kotte
             DrawText("Bomb: Space", 40, 140, 20, RAYWHITE);
             DrawText("Quit: Q/Escape", 40, 170, 20, RAYWHITE);
             DrawText("Destroy Crate = 1 p, Kill Enemy = 3 points", 40, 220, 20, RAYWHITE);
-            DrawText("Reach 20 points to win. Keep away from blast and enemy ", 40, 250, 20, RAYWHITE);
+            DrawText("Reach 100 points to win. Keep away from blast and enemy ", 40, 250, 20, RAYWHITE);
             DrawText("Press ENTER to start", 40, 310, 20, YELLOW);
         } else {
-            DrawText(TextFormat("Score: %i / 20", score), 10, 10, 20, RAYWHITE);
+            DrawText(TextFormat("Score: %i / 100", score), 10, 10, 20, RAYWHITE);
             DrawText(TextFormat("Range: %i (max 20)", blastRange), 10, 34, 20, RAYWHITE);
         }
 
@@ -593,6 +593,7 @@ namespace kotte
         entities_ = EntityStore{};
         spatial_grid_ = SpatialGrid{ {200.0f * tile_size_, 120.0f * tile_size_}, spatial_cell_size_ };
 
+        seed_ += 1; // new map every restart
         random_ = Random{ seed_ };
         map_ = make_room(200, 120, random_);
         populate_entities();
@@ -609,28 +610,28 @@ namespace kotte
         // relocate slot storage. Handles remain valid even if this estimate grows.
         entities_.reserve(map_.tile_count() / 4);
 
-        const Entity player_entity{EntityKind::player, {tile_size_ * 2.5f, tile_size_ * 2.5f}};
+        const Entity player_entity{EntityKind::player, {tile_size_ * 2.5f, tile_size_ * 2.9f}};
         player_handle_ = entities_.create(player_entity);
         spatial_grid_.insert(player_handle_, entity_world_bounds(player_entity));
 
 
         for(int y = 1; y < map_.height() - 1; ++y){
             for(int x = 1; x < map_.width() - 1; ++x){
-                if((x == 2 && y == 2) || map_.at(x, y).type != TileType::floor || !random_.coin_flip(0.25f)){
+                if((x == 2 && y == 2) || map_.at(x, y).type != TileType::floor || !random_.coin_flip(0.35f)){
                     continue;
                 }
 
-                const std::uint8_t kind_roll = random_.next<20, std::uint8_t>();
+                const std::uint8_t kind_roll = random_.next<50, std::uint8_t>();
                 // Week 3's inert bomb markers are no longer needed: every bomb
                 // now enters the world through the explicit lifetime path.
-                if (kind_roll >= 16 && kind_roll < 19) {
+                if (kind_roll >= 35 && kind_roll < 40) {
                     continue;
                 }
                 EntityKind kind = EntityKind::crate;
-                if (kind_roll == 15) {
+                if (kind_roll >= 40 && kind_roll < 45) {
                     kind = EntityKind::pickup;
                 }
-                if (kind_roll == 19) {
+                if (kind_roll >= 45) {
                     kind = EntityKind::enemy;
                 }
 

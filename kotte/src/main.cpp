@@ -1,11 +1,12 @@
 #include "kotte/application.hpp"
 
 #include <cstdint>
+#include <ctime>
 #include <exception>
 
 int main([[maybe_unused]] int argc, [[maybe_unused]]  char** argv){    
     try{
-        constexpr std::uint64_t seed = 0x4b4f545445ULL;
+        const std::uint64_t seed = static_cast<std::uint64_t>(std::time(nullptr)); 
         kotte::Application app{1280, 720, "Kotte", seed};
         app.run();
     } catch(const std::exception& error){
