@@ -58,7 +58,7 @@ namespace kotte
             if (player_Alive == false) {
                 thisRound = roundState::Lost;
             }
-            else if (score >= 10) {
+            else if (score >= 20) {
                 thisRound = roundState::Won;
             }
         }
@@ -123,6 +123,14 @@ namespace kotte
         
         if (player_Alive) {
             update_player(delta_time);
+            SpatialQuery nearby = spatial_grid_.query(entity_world_bounds(player()));
+            for (std::size_t i = 0; i < nearby.entity_handles.size(); i++) {
+                Entity& thing = entity(nearby.entity_handles[i]);
+                if (thing.kind == EntityKind::pickup && CheckCollisionRecs(entity_world_bounds(player()), entity_world_bounds(thing))) {
+                    blastRange = std::min(blastRange + 1, 20);
+                    destroy_entity_requests_.push_back({ nearby.entity_handles[i] });
+                }
+            }
             queue_bomb_placement();
         }
         update_enemies(delta_time);
@@ -325,7 +333,7 @@ namespace kotte
                 .bomb_state = BombState{
                     .owner = request.owner,
                     .fuse_remaining = bomb_fuse_seconds_,
-                    .blast_range = bomb_blast_range_
+                    .blast_range = (std::uint8_t)blastRange
                 }
             };
             const EntityHandle bomb_handle = entities_.create(bomb);
@@ -558,10 +566,11 @@ namespace kotte
             DrawText("Bomb: Space", 40, 140, 20, RAYWHITE);
             DrawText("Quit: Q/Escape", 40, 170, 20, RAYWHITE);
             DrawText("Destroy Crate = 1 p, Kill Enemy = 3 points", 40, 220, 20, RAYWHITE);
-            DrawText("Reach 10 points to win. Keep away from blast and enemy ", 40, 250, 20, RAYWHITE);
+            DrawText("Reach 20 points to win. Keep away from blast and enemy ", 40, 250, 20, RAYWHITE);
             DrawText("Press ENTER to start", 40, 310, 20, YELLOW);
         } else {
-            DrawText(TextFormat("Score: %i / 10", score), 10, 10, 20, RAYWHITE);
+            DrawText(TextFormat("Score: %i / 20", score), 10, 10, 20, RAYWHITE);
+            DrawText(TextFormat("Range: %i (max 20)", blastRange), 10, 34, 20, RAYWHITE);
         }
 
         if (thisRound == roundState::Won) {
@@ -592,6 +601,7 @@ namespace kotte
         score = 0;
         player_Alive = true;
         thisRound = roundState::Start;
+        blastRange = 3;
     }
 
     void Application::populate_entities(){
@@ -603,6 +613,7 @@ namespace kotte
         player_handle_ = entities_.create(player_entity);
         spatial_grid_.insert(player_handle_, entity_world_bounds(player_entity));
 
+
         for(int y = 1; y < map_.height() - 1; ++y){
             for(int x = 1; x < map_.width() - 1; ++x){
                 if((x == 2 && y == 2) || map_.at(x, y).type != TileType::floor || !random_.coin_flip(0.25f)){
@@ -612,13 +623,20 @@ namespace kotte
                 const std::uint8_t kind_roll = random_.next<20, std::uint8_t>();
                 // Week 3's inert bomb markers are no longer needed: every bomb
                 // now enters the world through the explicit lifetime path.
-                if(kind_roll >= 15 && kind_roll < 19){
+                if (kind_roll >= 16 && kind_roll < 19) {
                     continue;
                 }
-                const EntityKind kind = kind_roll < 15 ? EntityKind::crate : EntityKind::enemy;
+                EntityKind kind = EntityKind::crate;
+                if (kind_roll == 15) {
+                    kind = EntityKind::pickup;
+                }
+                if (kind_roll == 19) {
+                    kind = EntityKind::enemy;
+                }
+
                 const Vector2 world_position{
                     static_cast<float>(x * tile_size_ + tile_size_ / 2),
-                    static_cast<float>(y * tile_size_ + tile_size_ / 2)
+                    static_cast<float>(y * tile_size_ + tile_size_ - 4)
                 };
                 const Entity new_entity{kind, world_position};
                 const EntityHandle handle = entities_.create(new_entity);
@@ -666,8 +684,9 @@ namespace kotte
         switch(entity.kind){
         case EntityKind::player: size = {24.0f, 32.0f}; break;
         case EntityKind::bomb: size = {22.0f, 22.0f}; break;
-        case EntityKind::crate: size = {36.0f, 48.0f}; break;
+        case EntityKind::crate: size = {36.0f, 36.0f}; break;
         case EntityKind::enemy: size = {28.0f, 30.0f}; break;
+        case EntityKind::pickup: size = { 20.0f, 20.0f }; break;
         }
 
         const Vector2 top_left = entity.world_position - Vector2{size.x / 2.0f, size.y};
@@ -684,6 +703,7 @@ namespace kotte
         case EntityKind::bomb: size = {18.0f, 12.0f}; break;
         case EntityKind::crate: size = {32.0f, 32.0f}; break;
         case EntityKind::enemy: size = {24.0f, 14.0f}; break;
+        case EntityKind::pickup: size = { 20.0f, 20.0f }; break;
         }
 
         const Vector2 top_left = entity.world_position - Vector2{size.x / 2.0f, size.y};
@@ -819,6 +839,7 @@ namespace kotte
         case EntityKind::bomb: return bomb_color_;
         case EntityKind::crate: return crate_color_;
         case EntityKind::enemy: return enemy_color_;
+        case EntityKind::pickup: return BLUE;
         }
         return MAGENTA;
     }

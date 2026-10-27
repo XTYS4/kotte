@@ -136,7 +136,7 @@ namespace kotte
         };
         static constexpr Color player_color_{ 0xff, 0xff, 0xff, 0xff }; 
         static constexpr Color bomb_color_{ 0x00, 0x00, 0x00, 0xff }; 
-        static constexpr Color blast_color_{ 0xff, 0x8c, 0x00, 0xe8 };
+        static constexpr Color blast_color_{ 0,0,0,255 };
         static constexpr Color crate_color_{ 0xb0, 0x72, 0x3c, 0xff }; 
         static constexpr Color enemy_color_{ 0xe0, 0x20, 0x20, 0xff };
         static constexpr Color wall_color_{ 0x5a, 0x5a, 0x5a, 0xff };
@@ -165,6 +165,7 @@ namespace kotte
         enum class roundState { Start, Game, Won, Lost};
         roundState thisRound = roundState::Start;
         int score = 0; // 1 for crate destruction, 3 for enemy kill
+        int blastRange = 3;
 
     };
 }
