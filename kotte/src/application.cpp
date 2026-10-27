@@ -309,6 +309,16 @@ namespace kotte
                 continue;
             }
 
+            bool tileTaken = false;
+            for (std::size_t i = 0; i < active_bomb_handles_.size(); i++) {
+                if (entity(active_bomb_handles_[i]).world_position == request.world_position) {
+                    tileTaken = true;
+                }
+            }
+            if (tileTaken) {
+                continue;
+            }
+
             const Entity bomb{
                 .kind = EntityKind::bomb,
                 .world_position = request.world_position,
@@ -725,6 +735,12 @@ namespace kotte
                 continue;
             }
 
+            Entity& thing = entity(candidate_handle);
+            bool standingOnIt = CheckCollisionRecs(entity_collision_bounds(entity(moving_entity_handle)), entity_collision_bounds(thing));
+            if (thing.kind == EntityKind::bomb && thing.bomb_state.value().owner == moving_entity_handle && standingOnIt) {
+                continue;
+            }
+
             // Narrow phase: exact-test the remaining solid candidate.
             ++collision_diagnostics_.exact_tests;
             if(CheckCollisionRecs(proposed_collision_bounds, entity_collision_bounds(*candidate))){
@@ -743,7 +759,7 @@ namespace kotte
         case EntityKind::enemy:
             return true;
         case EntityKind::bomb:
-            return false;
+            return true; // ez
         }
 
         return false;
