@@ -159,8 +159,11 @@ namespace kotte
         EntityHandle player_handle_;
         bool exit_requested_ = false;
 
-
         bool player_Alive = true;
         bool player_IsHit = false;
+        enum class roundState { Start, Game, Won, Lost};
+        roundState thisRound = roundState::Start;
+        int score = 0; // 1 for crate destruction, 3 for enemy kill
+
     };
 }

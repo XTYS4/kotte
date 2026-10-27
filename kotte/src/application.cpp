@@ -26,6 +26,7 @@ namespace kotte
         , seed_{seed}{
         populate_entities();
         initialize_enemies();
+        SetExitKey(KEY_NULL); // no key closes window
     }
 
     void Application::run(){
@@ -49,10 +50,18 @@ namespace kotte
         // boundaries visible as the simulation grows.
         begin_frame();
         collect_frame_actions();
-        update_gameplay(delta_time);
-        update_timed_gameplay(delta_time);
-        resolve_gameplay_facts();
-        apply_structural_mutations();
+        if (thisRound == roundState::Game) {
+            update_gameplay(delta_time);
+            update_timed_gameplay(delta_time);
+            resolve_gameplay_facts();
+            apply_structural_mutations();
+            if (player_Alive == false) {
+                thisRound = roundState::Lost;
+            }
+            else if (score >= 10) {
+                thisRound = roundState::Won;
+            }
+        }
         update_presentation(delta_time);
         render();
     }
@@ -71,8 +80,20 @@ namespace kotte
 
     void Application::collect_frame_actions() noexcept{
         if(IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)){
-            request_exit();
+            
+            if (thisRound == roundState::Game || thisRound == roundState::Won || thisRound == roundState::Lost) {
+                thisRound = roundState::Start;
+            }
+            else {
+                request_exit();
+            }
+            
         }
+
+        if (thisRound == roundState::Start && IsKeyPressed(KEY_ENTER)) {
+            thisRound = roundState::Game;
+        }
+
         frame_actions_.place_bomb = IsKeyPressed(KEY_SPACE);
 
         Vector2& movement_direction = frame_actions_.player_movement_direction;
@@ -321,6 +342,14 @@ namespace kotte
                 continue;
             }
 
+            Entity& thing = entity(request.entity);
+            if (thing.kind == EntityKind::crate) {
+                score += 1;
+            }
+            if (thing.kind == EntityKind::enemy) {
+                score += 3;
+            }
+
             // Spatial membership is derived from the live entity, so remove it
             // while the handle can still resolve to the bounds used at insertion.
             spatial_grid_.remove(request.entity, entity_world_bounds(*doomed));
@@ -508,62 +537,29 @@ namespace kotte
         renderer_.sort();
         renderer_.execute();
 
-        std::string diagnostics;
-        const double percent_of_entities = entities_.live_count() == 0
-            ? 0.0
-            : 100.0 * static_cast<double>(visible_entities) / static_cast<double>(entities_.live_count());
-
-        // A naive collision loop would test every entity for every movement
-        // attempt. Compare that full-scan count with the local broad-phase
-        // candidates; this is candidate reduction, not a measured FPS gain.
-        const double naive_collision_work = static_cast<double>(collision_diagnostics_.movement_attempts)
-            * static_cast<double>(entities_.live_count());
-        const double broad_phase_reduction = naive_collision_work == 0.0
-            ? 0.0
-            : 100.0 * (1.0 - static_cast<double>(collision_diagnostics_.unique_candidates) / naive_collision_work);
-
         DrawFPS(GetScreenWidth() - 100, 2);
 
-        const double percent_of_world = map_.tile_count() == 0 ? 0.0 : 100.0 * static_cast<double>(tiles_rendered) / static_cast<double>(map_.tile_count());
-        diagnostics = std::format(
-            "tiles rendered: {} ({:.1f}% of world)", tiles_rendered, percent_of_world);
-        DrawText(diagnostics.c_str(), 10, 10, 20, RAYWHITE);
+        if (thisRound == roundState::Start) {
+            DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Color{ 0, 0, 0, 200 });
+            DrawText("BOMBERMAN", 40, 40, 40, RAYWHITE);
+            DrawText("Move: WASD/arrows", 40, 110, 20, RAYWHITE);
+            DrawText("Bomb: Space", 40, 140, 20, RAYWHITE);
+            DrawText("Quit: Q/Escape", 40, 170, 20, RAYWHITE);
+            DrawText("Destroy Crate = 1 p, Kill Enemy = 3 points", 40, 220, 20, RAYWHITE);
+            DrawText("Reach 10 points to win. Keep away from blast and enemy ", 40, 250, 20, RAYWHITE);
+            DrawText("Press ENTER to start", 40, 310, 20, YELLOW);
+        } else {
+            DrawText(TextFormat("Score: %i / 10", score), 10, 10, 20, RAYWHITE);
+        }
 
-        diagnostics = std::format(
-            "entities: {} visible ({:.1f}% of {}) | {} visibility tests | {} commands",
-            visible_entities,
-            percent_of_entities,
-            entities_.live_count(),
-            exact_visibility_tests,
-            renderer_.command_count());
-        DrawText(diagnostics.c_str(), 10, 34, 20, RAYWHITE);
+        if (thisRound == roundState::Won) {
+            DrawText("YOU WON!", GetScreenWidth() / 2 - 100, GetScreenHeight() / 2 - 20, 40, GREEN);
+        }
+        if (thisRound == roundState::Lost) {
+            DrawText("YOU LOST", GetScreenWidth() / 2 - 100, GetScreenHeight() / 2 - 20, 40, RED);
+        }
 
-        diagnostics = std::format(
-            "enemies updated: {} | active bombs: {} | blast effects: {}",
-            collision_diagnostics_.enemy_updates,
-            active_bomb_handles_.size(),
-            blast_effects_.size());
-        DrawText(diagnostics.c_str(), 10, 58, 20, RAYWHITE);
-
-        diagnostics = std::format(
-            "broad phase: {} candidates | {:.1f}% fewer than full scan",
-            collision_diagnostics_.unique_candidates, broad_phase_reduction);
-        DrawText(diagnostics.c_str(), 10, 82, 20, RAYWHITE);
-
-        diagnostics = std::format(
-            "narrow phase: {} exact tests | {} contacts",
-            collision_diagnostics_.exact_tests,
-            collision_diagnostics_.contacts);
-        DrawText(diagnostics.c_str(), 10, 106, 20, RAYWHITE);
-
-        diagnostics = std::format("seed: {}", seed_);
-        DrawText(diagnostics.c_str(), 10, window_.height() - 78, 20, RAYWHITE);
-
-        diagnostics = std::format(
-            "world: {} x {} tiles | {} total", map_.width(), map_.height(), map_.tile_count());
-        DrawText(diagnostics.c_str(), 10, window_.height() - 54, 20, RAYWHITE);
-
-        DrawText("move: WASD/arrows | bomb: Space | quit: Q/Escape", 10, window_.height() - 30, 20, LIGHTGRAY);
+        
     }
 
     void Application::populate_entities(){
