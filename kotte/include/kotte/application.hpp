@@ -158,5 +158,9 @@ namespace kotte
         std::uint64_t seed_;
         EntityHandle player_handle_;
         bool exit_requested_ = false;
+
+
+        bool player_Alive = true;
+        bool player_IsHit = false;
     };
 }

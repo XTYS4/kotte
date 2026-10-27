@@ -63,6 +63,9 @@ namespace kotte
         assert(bomb_detonated_facts_.empty());
         assert(destroy_entity_requests_.empty());
         frame_actions_ = {};
+
+        player_IsHit = false;
+
         collision_diagnostics_ = {};
     }
 
@@ -94,9 +97,13 @@ namespace kotte
 
     void Application::update_gameplay(float delta_time){
         // The player and every enemy are movers; each asks its own collision question.
-        update_player(delta_time);
+        
+        if (player_Alive) {
+            update_player(delta_time);
+            queue_bomb_placement();
+        }
         update_enemies(delta_time);
-        queue_bomb_placement();
+        
     }
 
     void Application::update_timed_gameplay(float delta_time){
@@ -152,6 +159,11 @@ namespace kotte
         }
 
         bomb_detonated_facts_.clear();
+
+        if (player_IsHit && player_Alive) {
+            player_Alive = false;
+        }
+
     }
 
     void Application::apply_structural_mutations(){
@@ -224,9 +236,12 @@ namespace kotte
         for(const EntityHandle enemy_handle : enemy_handles_){
             // Each enemy is one mover with one cardinal movement attempt.
             ++collision_diagnostics_.enemy_updates;
-            ++collision_diagnostics_.movement_attempts;
+            ++collision_diagnostics_.movement_attempts; 
 
-            Entity& enemy = entity(enemy_handle);
+            Entity& enemy = entity(enemy_handle); //enemy handle = id ticker for each
+            if (CheckCollisionRecs(entity_world_bounds(player()), entity_world_bounds(enemy))) { //ewb = screen pos for the entity
+                player_IsHit = true;
+            }
             const Rectangle old_world_bounds = entity_world_bounds(enemy);
             // Propose one cardinal movement for this enemy.
             const Vector2 direction = cardinal_vector(enemy.movement_heading);
@@ -362,6 +377,9 @@ namespace kotte
                 break;
             case EntityKind::player:
                 // Player-hit consequences are outside the Week 6 lifetime seam.
+
+                player_IsHit = true;
+
                 break;
             }
         }
