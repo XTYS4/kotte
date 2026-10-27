@@ -62,6 +62,7 @@ namespace kotte
                 thisRound = roundState::Won;
             }
         }
+
         update_presentation(delta_time);
         render();
     }
@@ -82,6 +83,7 @@ namespace kotte
         if(IsKeyPressed(KEY_ESCAPE) || IsKeyPressed(KEY_Q)){
             
             if (thisRound == roundState::Game || thisRound == roundState::Won || thisRound == roundState::Lost) {
+                restartRound();
                 thisRound = roundState::Start;
             }
             else {
@@ -560,6 +562,26 @@ namespace kotte
         }
 
         
+    }
+
+    void Application::restartRound() {
+        enemy_handles_.clear();
+        active_bomb_handles_.clear();
+        place_bomb_requests_.clear();
+        bomb_detonated_facts_.clear();
+        destroy_entity_requests_.clear();
+        blast_effects_.clear();
+        entities_ = EntityStore{};
+        spatial_grid_ = SpatialGrid{ {200.0f * tile_size_, 120.0f * tile_size_}, spatial_cell_size_ };
+
+        random_ = Random{ seed_ };
+        map_ = make_room(200, 120, random_);
+        populate_entities();
+        initialize_enemies();
+
+        score = 0;
+        player_Alive = true;
+        thisRound = roundState::Start;
     }
 
     void Application::populate_entities(){
