@@ -312,18 +312,22 @@ namespace kotte
     void Application::apply_bomb_placements(){
         for(const PlaceBombRequest& request : place_bomb_requests_){
             const Entity* owner = entities_.try_get(request.owner);
-            if(owner == nullptr || owner->kind != EntityKind::player
-                || owner_has_active_bomb(request.owner)){
+            if(owner == nullptr || owner->kind != EntityKind::player){ // no owner has active bomb check for many bombs at once
                 continue;
             }
 
             bool tileTaken = false;
+            int myBombs = 0;
             for (std::size_t i = 0; i < active_bomb_handles_.size(); i++) {
-                if (entity(active_bomb_handles_[i]).world_position == request.world_position) {
+                Entity& other = entity(active_bomb_handles_[i]);
+                if (other.world_position == request.world_position) {
                     tileTaken = true;
                 }
+                if (other.bomb_state.value().owner == request.owner) {
+                    myBombs += 1;
+                }
             }
-            if (tileTaken) {
+            if (tileTaken || myBombs >= 3) {
                 continue;
             }
 
@@ -571,6 +575,17 @@ namespace kotte
         } else {
             DrawText(TextFormat("Score: %i / 100", score), 10, 10, 20, RAYWHITE);
             DrawText(TextFormat("Range: %i (max 20)", blastRange), 10, 34, 20, RAYWHITE);
+
+            int bombsDown = (int)active_bomb_handles_.size();
+            DrawText("Bombs", 10, 58, 20, RAYWHITE);
+            for (int i = 0; i < 3; i++) {
+                if (i < 3 - bombsDown) {
+                    DrawCircle(90 + i * 24, 68, 8, RAYWHITE);
+                }
+                else {
+                    DrawCircleLines(90 + i * 24, 68, 8, RAYWHITE);
+                }
+            }
         }
 
         if (thisRound == roundState::Won) {
