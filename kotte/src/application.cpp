@@ -633,7 +633,7 @@ namespace kotte
         player_Alive = true;
         thisRound = roundState::Start;
         blastRange = 3;
-        shieldTime = 5.0f;
+        shieldTime = 5.0f; 
     }
 
     void Application::populate_entities(){

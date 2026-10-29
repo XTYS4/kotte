@@ -1,64 +1,54 @@
-# Bomberman World — [your game title]
+# Bomberman World — Bomberman Game
 
-**Student:** [your name]
-
-> Replace the prompts below and remove these instructions. Keep answers brief. Your implementation explanations and reflection belong in the presentation; you do not need to write them out here. Complete the final section only if seeking Pass with Distinction (VG).
+**Student:** Pähirdin Palihati
 
 ## How to play
 
-- **Controls:** [movement, bombs, restart, and any extension controls]
-- **Objective and rules:** [how to win/lose; which result wins if both happen together; any extension rules needed to understand the game]
-- **Configurations / demo setup:** [how to select gameplay/stress configurations and use any special setup or debug keys; write “default” where appropriate]
+- **Controls:** 
+WASD or arrow keys = move. 
+Space = place a bomb. 
+Enter = start the round. 
+Q or Escape during or after a round = new round and back to the start page. 
+Q or Escape on the start page = quit.
+
+- **Objective and rules:** 
+Reach 100 points. 
+A bombed crate gives 1 point
+An enemy bombed 3 points. 
+A blast or an enemy touch kills you and you loose. 
+Blue squares give +1 blast range, max up to 20 from +1's. 
+You can have 3 bombs at once. 
+Every round starts with a 5 second shield.
+
+- **Configurations / demo setup:** 
+default
+The map is new every launch and every restart
 
 ## Features and validation
 
-(delete this pre-amble before submitting the assignment) Complete the five required features and three extensions of your choice. For each row, document **at least one useful check: what you tested, what you observed, and how the result compares with the expected behaviour**. One or two sentences per feature are enough. Choose a check that could reveal a mistake, such as a boundary case or interaction.
-
-Use the practical checks in the assignment to validate the acceptance conditions during development; this table is a small sample of that work. Manual play in a small, repeatable setup is sufficient. You can also use a debugger, temporary logging, or small scenarios set up in code. Screenshots, recordings, automated tests etc are welcome, but not required. Be ready to explain the relevant rules in your code.
-
 | Feature | Check, observed result, and expected behaviour |
 | --- | --- |
-| 1. Player damage and death | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 2. Round states and objective | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 3. Safe restart | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 4. Solid bombs with owner escape | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| 5. Blast-range pickup | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 1] | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 2] | [what I tested, what I observed, and whether it matched the expected behaviour] |
-| [# and name of chosen extension 3] | [what I tested, what I observed, and whether it matched the expected behaviour] |
+| 1. Player damage and death | I stood on my own bomb and died, I walked into an enemy and died, I stood a tile away from the bomb blast and lived. After death the player could not move and the round stayed Lost until restart, as expected. |
 
-Example: “I ended a round with live bombs and restarted three times to check that old-round state was cleared. No old explosions appeared, and bomb capacity reset each time.” Report your actual results, including any failures or remaining limitations; stating that something “works” does not describe a check.
+| 2. Round states and objective | I won one round by reachinng 100 points and lost another by standing in a blast. In both, enemies and fuses stopped and Space did nothing, as expected. |
 
-**Known issues:** [remaining problems and how to encounter them, or “None known after testing”]
+| 3. Safe restart | I died while a bomb was still ticking and restarted at once, twice in a row. No old exploson appeared, score was 0, range 3, the shield was back and I could place 3 bombs. |
+
+| 4. Solid bombs with owner escape | I placed a bomb, walked off it, and could not walk back in, after it exploded I walked through its tile. An enemy walking into my bomb turned around. Pressing Space twice on the same tile placed only one bomb. |
+
+| 5. Blast-range pickup | I walked next to a pickup (no change) , then onto it (range 3 to 4) walking over the spot again kept 4. A bomb placed before the pickup still had range 3, the next one had 4. |
+
+| 6. Multiple bombs per owner | I placd 3 bombs, a 4th press did nothing and the HUD showed 3 empty circles. When one exploded a circle refilled and I could place one more. I repeated the cycle twice. |
+
+| 7. Chain reactions | I placed bomb A, then bomb B within A's range 1 second later. A's blast set off B early, and B exploded only once. |
+
+| 8. Temporary invulnerability | At round start I stood in my own blast and survived (shield on). After the shield circle disappeared, the same test killed me. After restart the shield was back. |
+
+**Known issues:** If a bomb is placed while an enemy is standing on that tile, the enemy cannot move until the bomb explodes (the blast then destroys it).
 
 ## Sources and assistance
 
 This project builds on the shared Kotte foundations.
 
-[Briefly identify meaningful external code/resources, discussion or collaboration, and AI assistance. Link to sources where relevant, say what they contributed, and explain what you checked yourself. State “None beyond the course material” if applicable. No prompt transcript or activity diary is needed. Retain required licence/attribution notices.]
+I used Claude as a tutor, using it to explain the course code and review my code implementations for each extensions + 5 main features and using its suggestions for some features (random seed per round, crate density) and for fixes to build errors. I tested every feature in the game myself. No other external code was used.
 
-## Architectural investigation — VG only
-
-Delete this section for a G submission. For VG, pose a focused engineering question about one decision in your implementation, investigate it, and draw a conclusion from evidence. Documenting the explanation already required for G is not enough. Aim for half a page to one page, excluding small tables, diagrams, or code excerpts. You can use the same decision in your presentation too.
-
-### Decision
-
-[State the question you are investigating and the implementation decision it concerns. Describe your current approach and a plausible alternative. Identify the relevant code. You do not need to implement the alternative.]
-
-### Method
-
-[How did you investigate the decision? Give enough detail to reproduce the key observation: setup, input, configuration/seed, and the test, trace, debugger inspection, or other method used.]
-
-### Evidence
-
-[What did you actually observe in your game? Include the relevant result or a small excerpt, table, or link to supporting material.]
-
-### Interpretation
-
-[Explain why it happened using the relevant code or architecture. Analyse at least one edge case, failure, defect, limitation, or trade-off illustrated by the investigation. Discuss relevant consequences for correctness, maintainability, performance, and/or scalability; you do not need to cover all four.]
-
-### Conclusion
-
-[When is your approach appropriate, what limits it, and when might an alternative become preferable? Base the conclusion on your evidence. Confirming that the current approach is suitable is a valid result.]
-
-<!-- Submission: commit and push this README with your source to GitHub or the internal Gitea server. Submit the final commit link and a runnable Release ZIP from that version in Studium. Ensure the teacher can access the repository throughout assessment. -->
