@@ -421,6 +421,8 @@ namespace kotte
 
             switch(candidate->kind){
             case EntityKind::bomb:
+                entity(handle).bomb_state.value().fuse_remaining = 0.2f;
+                break;
             case EntityKind::enemy:
                 destroy_entity_requests_.push_back({handle});
                 break;
