@@ -123,6 +123,9 @@ namespace kotte
         
         if (player_Alive) {
             update_player(delta_time);
+            if (shieldTime >= 0.0f) {
+                shieldTime -= delta_time;
+            }
             SpatialQuery nearby = spatial_grid_.query(entity_world_bounds(player()));
             for (std::size_t i = 0; i < nearby.entity_handles.size(); i++) {
                 Entity& thing = entity(nearby.entity_handles[i]);
@@ -191,7 +194,7 @@ namespace kotte
 
         bomb_detonated_facts_.clear();
 
-        if (player_IsHit && player_Alive) {
+        if (player_IsHit && player_Alive && shieldTime <= 0.0f) {
             player_Alive = false;
         }
 
@@ -421,7 +424,9 @@ namespace kotte
 
             switch(candidate->kind){
             case EntityKind::bomb:
-                entity(handle).bomb_state.value().fuse_remaining = 0.2f;
+                if (entity(handle).bomb_state.value().fuse_remaining >= 0.2f) {
+                    entity(handle).bomb_state.value().fuse_remaining = 0.2f;
+                }
                 break;
             case EntityKind::enemy:
                 destroy_entity_requests_.push_back({handle});
@@ -588,6 +593,14 @@ namespace kotte
                     DrawCircleLines(90 + i * 24, 68, 8, RAYWHITE);
                 }
             }
+
+            if (shieldTime > 0.0f) {
+                Vector2 p = camera_.world_to_screen(player().world_position);
+                DrawCircle((int)p.x, (int)p.y - 16, 26, Color{ 0, 120, 255, 90 });
+                DrawText(TextFormat("%.1f", shieldTime), (int)p.x - 14, (int)p.y - 26, 20, WHITE);
+
+            }
+
         }
 
         if (thisRound == roundState::Won) {
@@ -620,6 +633,7 @@ namespace kotte
         player_Alive = true;
         thisRound = roundState::Start;
         blastRange = 3;
+        shieldTime = 5.0f;
     }
 
     void Application::populate_entities(){

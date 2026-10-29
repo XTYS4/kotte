@@ -166,6 +166,7 @@ namespace kotte
         roundState thisRound = roundState::Start;
         int score = 0; // 1 for crate destruction, 3 for enemy kill
         int blastRange = 3;
+        float shieldTime = 5.0f;
 
     };
 }
